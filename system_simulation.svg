@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" font-family="'Segoe UI', 'Malgun Gothic', sans-serif">
+  <!-- ============================ -->
+  <!-- LSTM 발전량 예측 시스템      -->
+  <!-- 동작 시뮬레이션 블록도        -->
+  <!-- ============================ -->
+
+  <defs>
+    <!-- 배경 그라데이션 -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <!-- 블록 스타일 -->
+    <linearGradient id="srcGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="collectGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#15803d"/>
+    </linearGradient>
+    <linearGradient id="dbGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="prepGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#6b21a8"/>
+    </linearGradient>
+    <linearGradient id="modelGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="100%" stop-color="#991b1b"/>
+    </linearGradient>
+    <linearGradient id="outGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#065f46"/>
+    </linearGradient>
+
+    <!-- 화살표 마커 -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrowFlow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#facc15"/>
+    </marker>
+
+    <!-- 빛나는 효과 -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- LSTM 셀 박스 -->
+    <symbol id="lstmCell" viewBox="0 0 80 60">
+      <rect x="2" y="2" width="76" height="56" rx="8" ry="8" fill="#7f1d1d" stroke="#fca5a5" stroke-width="1.5"/>
+      <text x="40" y="35" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold">LSTM</text>
+    </symbol>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="1400" height="900" fill="url(#bgGrad)"/>
+
+  <!-- 격자 -->
+  <g opacity="0.07" stroke="#94a3b8" stroke-width="0.5">
+    <path d="M0 0 L1400 0 M0 100 L1400 100 M0 200 L1400 200 M0 300 L1400 300 M0 400 L1400 400 M0 500 L1400 500 M0 600 L1400 600 M0 700 L1400 700 M0 800 L1400 800 M0 900 L1400 900"/>
+    <path d="M0 0 L0 900 M100 0 L100 900 M200 0 L200 900 M300 0 L300 900 M400 0 L400 900 M500 0 L500 900 M600 0 L600 900 M700 0 L700 900 M800 0 L800 900 M900 0 L900 900 M1000 0 L1000 900 M1100 0 L1100 900 M1200 0 L1200 900 M1300 0 L1300 900 M1400 0 L1400 900"/>
+  </g>
+
+  <!-- ============ 타이틀 ============ -->
+  <text x="700" y="40" text-anchor="middle" font-size="26" fill="#f8fafc" font-weight="bold">
+    LSTM 발전량 예측 시스템 - 동작 시뮬레이션 블록도
+  </text>
+  <text x="700" y="65" text-anchor="middle" font-size="13" fill="#94a3b8">
+    기상청 ASOS + RP2040 Modbus 실측 → MySQL → LSTM(seq=35, 8 features) → 미래 시간별 power_kw 예측
+  </text>
+
+  <!-- 단계 라벨 -->
+  <g font-size="11" fill="#64748b" text-anchor="middle">
+    <text x="120" y="100">① DATA SOURCE</text>
+    <text x="350" y="100">② COLLECTION</text>
+    <text x="600" y="100">③ MYSQL DB</text>
+    <text x="850" y="100">④ PREPROCESSING</text>
+    <text x="1100" y="100">⑤ LSTM PREDICTOR</text>
+    <text x="1310" y="100">⑥ OUTPUT</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- ① DATA SOURCE                  -->
+  <!-- ============================== -->
+
+  <!-- KMA API -->
+  <g>
+    <rect x="40" y="130" width="170" height="90" rx="10" fill="url(#srcGrad)" stroke="#bae6fd" stroke-width="1.5" filter="url(#glow)"/>
+    <text x="125" y="158" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold">기상청 공공 API</text>
+    <text x="125" y="178" text-anchor="middle" font-size="11" fill="#e0f2fe">AsosHourlyInfoService</text>
+    <text x="125" y="196" text-anchor="middle" font-size="10" fill="#bae6fd">ta, hm, ws, rn (시간별)</text>
+    <text x="125" y="212" text-anchor="middle" font-size="10" fill="#bae6fd">stnIds=108 / 24h</text>
+    <!-- 안테나 -->
+    <circle cx="20" cy="175" r="6" fill="#fde047">
+      <animate attributeName="r" values="6;9;6" dur="1.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- RP2040 Modbus -->
+  <g>
+    <rect x="40" y="290" width="170" height="90" rx="10" fill="url(#srcGrad)" stroke="#bae6fd" stroke-width="1.5" filter="url(#glow)"/>
+    <text x="125" y="318" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold">RP2040 현장 실측</text>
+    <text x="125" y="338" text-anchor="middle" font-size="11" fill="#e0f2fe">Modbus RTU / TCP</text>
+    <text x="125" y="356" text-anchor="middle" font-size="10" fill="#bae6fd">power_kw, temp, hum</text>
+    <text x="125" y="372" text-anchor="middle" font-size="10" fill="#bae6fd">slave_id=1 / 1Hz</text>
+    <!-- LED -->
+    <circle cx="20" cy="335" r="6" fill="#22c55e">
+      <animate attributeName="opacity" values="1;0.2;1" dur="1s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- Modbus 에뮬레이터 (보조) -->
+  <g>
+    <rect x="40" y="420" width="170" height="60" rx="10" fill="#1e293b" stroke="#475569" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="125" y="445" text-anchor="middle" font-size="12" fill="#cbd5e1" font-weight="bold">modbus_emulator.py</text>
+    <text x="125" y="463" text-anchor="middle" font-size="10" fill="#94a3b8">TCP 127.0.0.1:5020 (개발용)</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- ② COLLECTION                   -->
+  <!-- ============================== -->
+  <g>
+    <rect x="265" y="130" width="180" height="90" rx="10" fill="url(#collectGrad)" stroke="#bbf7d0" stroke-width="1.5"/>
+    <text x="355" y="158" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">collect_weather.py</text>
+    <text x="355" y="174" text-anchor="middle" font-size="11" fill="#dcfce7">collect_weather_backfill</text>
+    <text x="355" y="192" text-anchor="middle" font-size="10" fill="#bbf7d0">requests.get() → JSON</text>
+    <text x="355" y="208" text-anchor="middle" font-size="10" fill="#bbf7d0">parse + dataclass row</text>
+  </g>
+
+  <g>
+    <rect x="265" y="290" width="180" height="90" rx="10" fill="url(#collectGrad)" stroke="#bbf7d0" stroke-width="1.5"/>
+    <text x="355" y="318" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">collect_rp2040_modbus.py</text>
+    <text x="355" y="336" text-anchor="middle" font-size="10" fill="#dcfce7">read_holding_registers(0,3)</text>
+    <text x="355" y="352" text-anchor="middle" font-size="10" fill="#bbf7d0">regs[0]/100 → kW</text>
+    <text x="355" y="368" text-anchor="middle" font-size="10" fill="#bbf7d0">while True : sleep(1)</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- ③ MYSQL DB                     -->
+  <!-- ============================== -->
+  <g transform="translate(515,140)">
+    <!-- DB 실린더 -->
+    <ellipse cx="85" cy="15" rx="80" ry="14" fill="#b45309"/>
+    <rect x="5" y="15" width="160" height="270" fill="url(#dbGrad)" stroke="#fde68a" stroke-width="1.5"/>
+    <ellipse cx="85" cy="285" rx="80" ry="14" fill="#b45309"/>
+    <ellipse cx="85" cy="15" rx="80" ry="14" fill="none" stroke="#fde68a" stroke-width="1.5"/>
+
+    <text x="85" y="20" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold">MySQL</text>
+
+    <!-- 테이블 1 -->
+    <rect x="20" y="45" width="130" height="55" rx="6" fill="#78350f" stroke="#fcd34d" stroke-width="1"/>
+    <text x="85" y="63" text-anchor="middle" font-size="11" fill="#fef3c7" font-weight="bold">weather_hourly</text>
+    <text x="85" y="78" text-anchor="middle" font-size="9" fill="#fde68a">obs_time, source,</text>
+    <text x="85" y="91" text-anchor="middle" font-size="9" fill="#fde68a">temp, hum, ws, rad, rn</text>
+
+    <!-- 테이블 2 -->
+    <rect x="20" y="115" width="130" height="55" rx="6" fill="#78350f" stroke="#fcd34d" stroke-width="1"/>
+    <text x="85" y="133" text-anchor="middle" font-size="11" fill="#fef3c7" font-weight="bold">power_realtime</text>
+    <text x="85" y="148" text-anchor="middle" font-size="9" fill="#fde68a">measured_at, device_id,</text>
+    <text x="85" y="161" text-anchor="middle" font-size="9" fill="#fde68a">power_kw, temp, hum</text>
+
+    <!-- 테이블 3 -->
+    <rect x="20" y="185" width="130" height="55" rx="6" fill="#78350f" stroke="#fcd34d" stroke-width="1"/>
+    <text x="85" y="203" text-anchor="middle" font-size="11" fill="#fef3c7" font-weight="bold">power_hourly</text>
+    <text x="85" y="218" text-anchor="middle" font-size="9" fill="#fde68a">hour_time, device_id,</text>
+    <text x="85" y="231" text-anchor="middle" font-size="9" fill="#fde68a">power_kw (집계)</text>
+
+    <!-- INSERT 표시등 -->
+    <circle cx="20" cy="260" r="4" fill="#22c55e">
+      <animate attributeName="opacity" values="1;0.1;1" dur="0.8s" repeatCount="indefinite"/>
+    </circle>
+    <text x="30" y="264" font-size="10" fill="#fef3c7">INSERT ... ON DUPLICATE KEY</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- ④ PREPROCESSING                -->
+  <!-- ============================== -->
+  <g>
+    <rect x="760" y="130" width="200" height="290" rx="10" fill="url(#prepGrad)" stroke="#e9d5ff" stroke-width="1.5"/>
+    <text x="860" y="158" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold">ml_shared.py</text>
+    <text x="860" y="175" text-anchor="middle" font-size="11" fill="#f3e8ff">load_joined()</text>
+
+    <!-- JOIN SQL 박스 -->
+    <rect x="775" y="190" width="170" height="60" rx="6" fill="#3b0764" stroke="#c084fc"/>
+    <text x="860" y="206" text-anchor="middle" font-size="10" fill="#e9d5ff" font-weight="bold">SQL JOIN</text>
+    <text x="860" y="220" text-anchor="middle" font-size="9" fill="#f3e8ff">weather_hourly w</text>
+    <text x="860" y="232" text-anchor="middle" font-size="9" fill="#f3e8ff">INNER JOIN power_hourly p</text>
+    <text x="860" y="245" text-anchor="middle" font-size="9" fill="#f3e8ff">ON p.hour_time = w.obs_time</text>
+
+    <!-- Feature 박스 -->
+    <rect x="775" y="260" width="170" height="80" rx="6" fill="#3b0764" stroke="#c084fc"/>
+    <text x="860" y="277" text-anchor="middle" font-size="10" fill="#e9d5ff" font-weight="bold">8 Features</text>
+    <text x="860" y="291" text-anchor="middle" font-size="9" fill="#f3e8ff">temp, hum, wind_speed,</text>
+    <text x="860" y="303" text-anchor="middle" font-size="9" fill="#f3e8ff">solar_rad, precip, power_kw,</text>
+    <text x="860" y="315" text-anchor="middle" font-size="9" fill="#f3e8ff">panel_temp, panel_humidity</text>
+    <text x="860" y="332" text-anchor="middle" font-size="10" fill="#fde047" font-weight="bold">MinMaxScaler</text>
+
+    <!-- Sequence 박스 -->
+    <rect x="775" y="350" width="170" height="60" rx="6" fill="#3b0764" stroke="#c084fc"/>
+    <text x="860" y="368" text-anchor="middle" font-size="10" fill="#e9d5ff" font-weight="bold">make_sequences()</text>
+    <text x="860" y="383" text-anchor="middle" font-size="10" fill="#fde047">SEQ_LEN = 35</text>
+    <text x="860" y="398" text-anchor="middle" font-size="9" fill="#f3e8ff">X:(N, 35, 8)   y:(N,)</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- ⑤ LSTM PREDICTOR              -->
+  <!-- ============================== -->
+  <g>
+    <rect x="990" y="130" width="240" height="290" rx="10" fill="url(#modelGrad)" stroke="#fecaca" stroke-width="1.5"/>
+    <text x="1110" y="158" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold">LSTM 예측기</text>
+    <text x="1110" y="175" text-anchor="middle" font-size="10" fill="#fee2e2">lstm_train.py / Keras Sequential</text>
+
+    <!-- 입력 -->
+    <text x="1010" y="200" font-size="10" fill="#fecaca">Input shape:</text>
+    <text x="1010" y="215" font-size="11" fill="#fff" font-weight="bold">(SEQ_LEN=35, FEATURES=8)</text>
+
+    <!-- LSTM 셀들 (unfold 시각화) -->
+    <g transform="translate(1005,235)">
+      <use href="#lstmCell" x="0" y="0" width="40" height="35"/>
+      <use href="#lstmCell" x="45" y="0" width="40" height="35"/>
+      <use href="#lstmCell" x="90" y="0" width="40" height="35"/>
+      <text x="155" y="22" font-size="14" fill="#fecaca">...</text>
+      <use href="#lstmCell" x="175" y="0" width="40" height="35"/>
+
+      <!-- hidden state 화살표 -->
+      <path d="M40 17 L45 17 M85 17 L90 17 M130 17 L150 17 M170 17 L175 17"
+            stroke="#fde047" stroke-width="1.5" fill="none" marker-end="url(#arrowFlow)"/>
+
+      <text x="20" y="55" text-anchor="middle" font-size="9" fill="#fff">t-34</text>
+      <text x="65" y="55" text-anchor="middle" font-size="9" fill="#fff">t-33</text>
+      <text x="110" y="55" text-anchor="middle" font-size="9" fill="#fff">t-32</text>
+      <text x="195" y="55" text-anchor="middle" font-size="9" fill="#fff">t</text>
+    </g>
+
+    <!-- 출력층 -->
+    <rect x="1015" y="310" width="190" height="35" rx="6" fill="#450a0a" stroke="#fecaca"/>
+    <text x="1110" y="332" text-anchor="middle" font-size="11" fill="#fff" font-weight="bold">Dense(1) → power_kw (scaled)</text>
+
+    <!-- inverse_power_kw -->
+    <rect x="1015" y="355" width="190" height="30" rx="6" fill="#450a0a" stroke="#fecaca"/>
+    <text x="1110" y="375" text-anchor="middle" font-size="11" fill="#fff">inverse_power_kw()</text>
+
+    <!-- 학습 정보 -->
+    <text x="1110" y="402" text-anchor="middle" font-size="9" fill="#fecaca">
+      adam / mse / epochs=8 / batch=32
+    </text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- ⑥ OUTPUT (예측 그래프)         -->
+  <!-- ============================== -->
+  <g transform="translate(1260,130)">
+    <rect x="0" y="0" width="120" height="290" rx="10" fill="url(#outGrad)" stroke="#a7f3d0" stroke-width="1.5"/>
+    <text x="60" y="22" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">예측 발전량</text>
+    <text x="60" y="38" text-anchor="middle" font-size="10" fill="#d1fae5">t+1 ~ t+H (kW)</text>
+
+    <!-- mini 그래프 -->
+    <rect x="10" y="50" width="100" height="160" fill="#064e3b" stroke="#a7f3d0"/>
+    <!-- 격자 -->
+    <g stroke="#065f46" stroke-width="0.5">
+      <path d="M10 90 L110 90 M10 130 L110 130 M10 170 L110 170"/>
+    </g>
+    <!-- 과거(흰선) -->
+    <polyline points="10,170 20,160 30,165 40,150 50,140 60,135"
+              fill="none" stroke="#e5e7eb" stroke-width="1.8"/>
+    <!-- 현재 마커 -->
+    <line x1="60" y1="50" x2="60" y2="210" stroke="#facc15" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="60" y="46" text-anchor="middle" font-size="8" fill="#facc15">NOW</text>
+    <!-- 미래 예측(점선) -->
+    <polyline points="60,135 70,120 80,100 90,85 100,75 110,72"
+              fill="none" stroke="#fde047" stroke-width="2" stroke-dasharray="4 2">
+      <animate attributeName="stroke-dashoffset" values="0;-12" dur="1s" repeatCount="indefinite"/>
+    </polyline>
+    <!-- 점들 -->
+    <circle cx="70" cy="120" r="2.5" fill="#fde047"/>
+    <circle cx="80" cy="100" r="2.5" fill="#fde047"/>
+    <circle cx="90" cy="85"  r="2.5" fill="#fde047"/>
+    <circle cx="100" cy="75" r="2.5" fill="#fde047"/>
+    <circle cx="110" cy="72" r="2.5" fill="#fde047"/>
+
+    <text x="60" y="228" text-anchor="middle" font-size="9" fill="#d1fae5">time (hour) →</text>
+
+    <!-- 출력 채널 -->
+    <rect x="10" y="240" width="100" height="20" rx="4" fill="#064e3b" stroke="#a7f3d0"/>
+    <text x="60" y="254" text-anchor="middle" font-size="9" fill="#fff">JSON / Print / Dashboard</text>
+    <rect x="10" y="265" width="100" height="20" rx="4" fill="#064e3b" stroke="#a7f3d0"/>
+    <text x="60" y="279" text-anchor="middle" font-size="9" fill="#fff">MAE / RMSE 지표</text>
+  </g>
+
+  <!-- ============================== -->
+  <!-- 데이터 흐름 화살표 + 패킷 애니메이션 -->
+  <!-- ============================== -->
+  <g stroke="#94a3b8" stroke-width="2" fill="none" marker-end="url(#arrow)">
+    <!-- ① → ② -->
+    <line x1="210" y1="175" x2="265" y2="175"/>
+    <line x1="210" y1="335" x2="265" y2="335"/>
+    <line x1="210" y1="450" x2="265" y2="370"/>
+
+    <!-- ② → ③ -->
+    <line x1="445" y1="175" x2="520" y2="200"/>
+    <line x1="445" y1="335" x2="520" y2="270"/>
+
+    <!-- ③ → ④ -->
+    <line x1="680" y1="275" x2="760" y2="275"/>
+
+    <!-- ④ → ⑤ -->
+    <line x1="960" y1="275" x2="990" y2="275"/>
+
+    <!-- ⑤ → ⑥ -->
+    <line x1="1230" y1="275" x2="1260" y2="275"/>
+  </g>
+
+  <!-- 흐르는 패킷(공통 경로) -->
+  <g fill="#fde047">
+    <!-- 패킷 A : KMA → collect → DB → prep → LSTM → out -->
+    <circle r="5">
+      <animateMotion dur="6s" repeatCount="indefinite" path="M210,175 L265,175 L445,175 L520,200 L680,275 L760,275 L960,275 L990,275 L1230,275 L1260,275"/>
+      <animate attributeName="opacity" values="0;1;1;1;1;0" dur="6s" repeatCount="indefinite"/>
+    </circle>
+    <!-- 패킷 B : Modbus → collect → DB -->
+    <circle r="5" fill="#22d3ee">
+      <animateMotion dur="5s" begin="1s" repeatCount="indefinite" path="M210,335 L265,335 L445,335 L520,270 L680,275 L760,275 L960,275 L990,275 L1230,275 L1260,275"/>
+      <animate attributeName="opacity" values="0;1;1;1;1;0" dur="5s" begin="1s" repeatCount="indefinite"/>
+    </circle>
+    <!-- 패킷 C : Emulator → collect -->
+    <circle r="4" fill="#a78bfa">
+      <animateMotion dur="3s" begin="0.5s" repeatCount="indefinite" path="M210,450 L265,370"/>
+      <animate attributeName="opacity" values="0;1;1;0" dur="3s" begin="0.5s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- ============================== -->
+  <!-- 하단 시뮬레이션 콘솔            -->
+  <!-- ============================== -->
+  <g transform="translate(40,520)">
+    <rect x="0" y="0" width="1320" height="340" rx="10" fill="#020617" stroke="#334155" stroke-width="1.5"/>
+    <text x="660" y="25" text-anchor="middle" font-size="14" fill="#f1f5f9" font-weight="bold">
+      ▼ 동작 시뮬레이션 타임라인 (1 사이클 = 1시간)
+    </text>
+
+    <!-- 타임라인 막대 -->
+    <g transform="translate(40,55)">
+      <rect x="0" y="0" width="1240" height="40" rx="6" fill="#1e293b" stroke="#475569"/>
+      <!-- 구간 -->
+      <rect x="0"    y="0" width="180" height="40" rx="6" fill="#0369a1" opacity="0.55"/>
+      <rect x="180"  y="0" width="180" height="40" fill="#15803d" opacity="0.55"/>
+      <rect x="360"  y="0" width="240" height="40" fill="#b45309" opacity="0.55"/>
+      <rect x="600"  y="0" width="220" height="40" fill="#6b21a8" opacity="0.55"/>
+      <rect x="820"  y="0" width="240" height="40" fill="#991b1b" opacity="0.55"/>
+      <rect x="1060" y="0" width="180" height="40" rx="6" fill="#065f46" opacity="0.55"/>
+
+      <!-- 구간 라벨 -->
+      <g font-size="11" fill="#f1f5f9" text-anchor="middle">
+        <text x="90"   y="25">t=00:00 수집</text>
+        <text x="270"  y="25">파싱·정규화</text>
+        <text x="480"  y="25">DB 저장 (UPSERT)</text>
+        <text x="710"  y="25">JOIN + Scaler + Seq(35)</text>
+        <text x="940"  y="25">LSTM forward</text>
+        <text x="1150" y="25">예측 출력</text>
+      </g>
+
+      <!-- 진행 헤드 -->
+      <g>
+        <line x1="0" y1="-8" x2="0" y2="48" stroke="#facc15" stroke-width="2">
+          <animate attributeName="x1" values="0;1240;0" dur="10s" repeatCount="indefinite"/>
+          <animate attributeName="x2" values="0;1240;0" dur="10s" repeatCount="indefinite"/>
+        </line>
+        <circle cx="0" cy="-8" r="5" fill="#facc15">
+          <animate attributeName="cx" values="0;1240;0" dur="10s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+    </g>
+
+    <!-- 콘솔 로그 영역 -->
+    <g transform="translate(40,115)" font-family="Consolas, 'Courier New', monospace" font-size="11">
+      <rect x="0" y="0" width="600" height="200" rx="6" fill="#0b1220" stroke="#1f2937"/>
+      <text x="10" y="20" fill="#22c55e">$ python collect_weather.py</text>
+      <text x="10" y="38" fill="#94a3b8">[INFO] source=public, 날짜=2026-06-09</text>
+      <text x="10" y="56" fill="#94a3b8">[OK]   weather_hourly +24 rows</text>
+      <text x="10" y="78" fill="#22c55e">$ python collect_rp2040_modbus.py</text>
+      <text x="10" y="96" fill="#94a3b8">[INFO] Modbus RTU COM3@9600, slave_id=1</text>
+      <text x="10" y="114" fill="#94a3b8">[OK]   power_realtime 2026-06-10 12:00 3.42kW</text>
+      <text x="10" y="136" fill="#22c55e">$ python train_baseline.py</text>
+      <text x="10" y="154" fill="#94a3b8">[BASELINE] MAE=0.412  RMSE=0.587  R²=0.81</text>
+      <text x="10" y="176" fill="#22c55e">$ python lstm_train.py</text>
+      <text x="10" y="194" fill="#facc15">[LSTM]   MAE=0.298  RMSE=0.411  ★ better</text>
+    </g>
+
+    <!-- 예측 결과 패널 -->
+    <g transform="translate(660,115)">
+      <rect x="0" y="0" width="620" height="200" rx="6" fill="#0b1220" stroke="#1f2937"/>
+      <text x="310" y="22" text-anchor="middle" font-size="12" fill="#f1f5f9" font-weight="bold">
+        현재 이후 시간별 예측 발전량 (kW)
+      </text>
+
+      <!-- 차트 영역 -->
+      <g transform="translate(20,40)">
+        <!-- 축 -->
+        <line x1="0" y1="140" x2="580" y2="140" stroke="#475569"/>
+        <line x1="0" y1="0"   x2="0"   y2="140" stroke="#475569"/>
+        <g font-size="9" fill="#64748b">
+          <text x="-3" y="0"   text-anchor="end">5</text>
+          <text x="-3" y="35"  text-anchor="end">4</text>
+          <text x="-3" y="70"  text-anchor="end">3</text>
+          <text x="-3" y="105" text-anchor="end">2</text>
+          <text x="-3" y="140" text-anchor="end">0</text>
+        </g>
+
+        <!-- NOW 라인 -->
+        <line x1="220" y1="0" x2="220" y2="140" stroke="#facc15" stroke-dasharray="3 2" stroke-width="1"/>
+        <text x="220" y="-4" text-anchor="middle" font-size="9" fill="#facc15">NOW</text>
+
+        <!-- 과거 실측 -->
+        <polyline fill="none" stroke="#e5e7eb" stroke-width="2"
+          points="0,120 25,110 50,100 75,95 100,85 125,80 150,75 175,68 200,60 220,55"/>
+        <g fill="#e5e7eb">
+          <circle cx="0"   cy="120" r="2.5"/>
+          <circle cx="50"  cy="100" r="2.5"/>
+          <circle cx="100" cy="85"  r="2.5"/>
+          <circle cx="150" cy="75"  r="2.5"/>
+          <circle cx="200" cy="60"  r="2.5"/>
+          <circle cx="220" cy="55"  r="2.5"/>
+        </g>
+        <text x="100" y="135" text-anchor="middle" font-size="9" fill="#94a3b8">과거 35h 실측</text>
+
+        <!-- 미래 예측 -->
+        <polyline fill="none" stroke="#fde047" stroke-width="2.5" stroke-dasharray="5 3"
+          points="220,55 260,40 300,32 340,30 380,38 420,55 460,75 500,98 540,118 580,132">
+          <animate attributeName="stroke-dashoffset" values="0;-16" dur="1.2s" repeatCount="indefinite"/>
+        </polyline>
+        <g fill="#fde047">
+          <circle cx="260" cy="40"  r="3"/>
+          <circle cx="300" cy="32"  r="3"/>
+          <circle cx="340" cy="30"  r="3"/>
+          <circle cx="380" cy="38"  r="3"/>
+          <circle cx="420" cy="55"  r="3"/>
+          <circle cx="460" cy="75"  r="3"/>
+          <circle cx="500" cy="98"  r="3"/>
+          <circle cx="540" cy="118" r="3"/>
+          <circle cx="580" cy="132" r="3"/>
+        </g>
+
+        <text x="400" y="135" text-anchor="middle" font-size="9" fill="#fde047">미래 H시간 LSTM 예측</text>
+
+        <!-- 값 표시 -->
+        <g font-size="9" fill="#fde047">
+          <text x="260" y="32" text-anchor="middle">4.6</text>
+          <text x="300" y="24" text-anchor="middle">4.8</text>
+          <text x="340" y="22" text-anchor="middle">4.9</text>
+          <text x="380" y="30" text-anchor="middle">4.7</text>
+          <text x="420" y="47" text-anchor="middle">4.2</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- 범례 -->
+  <g transform="translate(40,872)" font-size="11" fill="#94a3b8">
+    <circle cx="6" cy="-3" r="5" fill="#fde047"/>
+    <text x="16" y="0">KMA 패킷</text>
+    <circle cx="100" cy="-3" r="5" fill="#22d3ee"/>
+    <text x="110" y="0">Modbus 패킷</text>
+    <circle cx="210" cy="-3" r="5" fill="#a78bfa"/>
+    <text x="220" y="0">에뮬레이터 패킷</text>
+    <text x="360" y="0">— 실선: 실측 / ─ ─ 점선: 예측  |  cycle = 1h  |  SEQ_LEN=35  |  features=8</text>
+  </g>
+</svg>

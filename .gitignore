@@ -1,0 +1,32 @@
+# 비밀·로컬 설정 (절대 공유 금지)
+.env
+.env.*
+!.env.example
+
+# 강사용만 (로컬 보관, GitHub·clone 제외)
+진행순서_8단계.md
+소스_공유_방법.md
+_instructor/
+seed/generate_power_seed.py
+_instructor/
+instructor/
+*.local.md
+답안/
+해설/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 학습 결과·캐시
+metrics_baseline.json
+weather_api_*.json
+
+# OS / 에디터
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.claude/
