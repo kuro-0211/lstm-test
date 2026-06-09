@@ -5,11 +5,9 @@ LSTM 모델로 **현재 시각 이후 시간별 발전량(kW)** 을 예측하는
 
 ## 전체 시스템 블록도 / 동작 시뮬레이션
 
-<p align="center">
-  <img src="./system_simulation.svg" alt="LSTM 발전량 예측 시스템 블록도 및 동작 시뮬레이션" width="100%"/>
-</p>
+<img src="./system_simulation.svg" alt="LSTM 발전량 예측 시스템 블록도 및 동작 시뮬레이션" width="100%" style="max-width:1920px; width:100%; height:auto;"/>
 
-> SVG 파일을 직접 열면([system_simulation.svg](./system_simulation.svg)) 패킷 흐름·타임라인 진행 헤드·예측 곡선 등 SMIL 애니메이션이 재생됩니다.
+> 더 크게 보려면 SVG 파일을 직접 열어주세요 → **[system_simulation.svg](./system_simulation.svg)** (브라우저에서 SMIL 애니메이션 재생, 최대 1920×1234px)
 
 ---
 
